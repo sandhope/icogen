@@ -78,6 +78,18 @@ impl Gui {
         }
     }
 
+    /// Open the native folder dialog to choose the output directory.
+    /// Returns `true` if a directory was chosen.
+    pub fn pick_out_dir(&mut self) -> bool {
+        let picked = rfd::FileDialog::new().set_directory(&self.out_dir).pick_folder();
+        if let Some(path) = picked {
+            self.out_dir = path.to_string_lossy().into_owned();
+            true
+        } else {
+            false
+        }
+    }
+
     /// Write the enabled asset PNGs to `out_dir/`.
     pub fn generate(&mut self, s: &I18nStrings) {
         let src = match &self.src_image {

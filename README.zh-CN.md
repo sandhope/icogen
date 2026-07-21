@@ -77,7 +77,7 @@ icogen-assets <输入图片> [选项]
 - **256 px** 帧使用 PNG 压缩（文件小、高 DPI 下清晰）。
 - 其余小尺寸使用 32 位 BGRA 位图，支持 alpha 透明。
 
-![AppIcon.ico 各尺寸预览（16 至 256 px）](samples/preview.png)
+![AppIcon.ico 各尺寸预览（16 至 256 px）](assets/preview.png)
 
 ### WinUI 3 资源
 
@@ -125,7 +125,9 @@ cargo build --release
 ```
 icogen/
 ├── assets/                 # GUI 二进制内嵌的应用图标
-│   └── app.ico
+│   ├── app.ico
+│   ├── logo.png
+│   └── preview.png
 ├── crates/                 # 全部二进制与库
 │   ├── icogen/             # icogen.exe — AppIcon.ico CLI
 │   ├── icogen-assets/      # icogen-assets.exe — WinUI 3 资源 CLI
@@ -134,10 +136,6 @@ icogen/
 │   ├── icogen-gui/         # icogen-gui.exe — AppIcon.ico GUI
 │   └── icogen-ui/          # 公共 GPUI 组件与配色（lib）
 ├── dist/                   # 构建产物与成品二进制（已 gitignore）
-├── samples/                # 演示输入与输出
-│   ├── AppIcon.ico
-│   ├── logo.png
-│   └── preview.png
 ├── scripts/                # Python 参考实现
 │   ├── gen-assets.py
 │   ├── icogen_gen.py

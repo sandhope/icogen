@@ -16,6 +16,7 @@ pub struct I18nStrings {
     pub drop_hint: &'static str,
     pub no_file_selected: &'static str,
     pub image_filter: &'static str,
+    pub supported_formats: &'static str,
 
     // --- icogen-gui ---
     pub output: &'static str,
@@ -71,6 +72,7 @@ impl I18nStrings {
             drop_hint: "Drag an image here\nor click to browse",
             no_file_selected: "No file selected",
             image_filter: "Image",
+            supported_formats: "Supports PNG, JPG, SVG, WebP formats",
 
             output: "Output",
             sizes: "Sizes",
@@ -114,6 +116,7 @@ impl I18nStrings {
             drop_hint: "将图片拖放到此处\n或点击选择文件",
             no_file_selected: "未选择文件",
             image_filter: "图片",
+            supported_formats: "支持 PNG、JPG、SVG、WebP 格式",
 
             output: "输出",
             sizes: "尺寸",

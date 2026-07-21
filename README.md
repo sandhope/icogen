@@ -78,7 +78,7 @@ A single `.ico` embedding seven frames — `16 / 24 / 32 / 48 / 64 / 128 / 256` 
 - The **256 px** frame is stored as PNG (small file, crisp on high-DPI screens).
 - Smaller frames are stored as 32-bit BGRA bitmaps with alpha.
 
-![AppIcon.ico frames from 16 to 256 px](samples/preview.png)
+![AppIcon.ico frames from 16 to 256 px](assets/preview.png)
 
 ### WinUI 3 assets
 
@@ -128,7 +128,9 @@ directory instead of the global cargo home.
 ```
 icogen/
 ├── assets/                 # app icon embedded into the GUI binaries
-│   └── app.ico
+│   ├── app.ico
+│   ├── logo.png
+│   └── preview.png
 ├── crates/                 # all binaries + libs
 │   ├── icogen/             # icogen.exe — AppIcon.ico CLI
 │   ├── icogen-assets/      # icogen-assets.exe — WinUI 3 assets CLI
@@ -137,10 +139,6 @@ icogen/
 │   ├── icogen-gui/         # icogen-gui.exe — AppIcon.ico GUI
 │   └── icogen-ui/          # shared GPUI components & colors (lib)
 ├── dist/                   # build output & shipped binaries (gitignored)
-├── samples/                # demo input and output
-│   ├── AppIcon.ico
-│   ├── logo.png
-│   └── preview.png
 ├── scripts/                # Python reference implementations
 │   ├── gen-assets.py
 │   ├── icogen_gen.py

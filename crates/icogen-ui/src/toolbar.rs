@@ -6,7 +6,7 @@
 //! toggles plus the standard window controls (minimize, maximize, close).
 
 use gpui::prelude::*;
-use gpui::{div, px, App, ClickEvent, Context, Div, Hsla, Rgba, Stateful, Window, WindowControlArea};
+use gpui::{div, img, px, svg, App, ClickEvent, Context, Div, Hsla, Rgba, Stateful, Window, WindowControlArea};
 
 use crate::color::color;
 use crate::i18n::I18nManager;
@@ -146,7 +146,16 @@ pub fn toolbar<T: 'static>(title: &str, t: &ThemeColors, window: &mut Window, cx
 
     // Show the *target* state: click to switch there.
     // Light → moon (switch to dark); dark → sun (switch to light).
-    let theme_icon: &'static str = if is_dark { "\u{2600}" } else { "\u{263E}" };
+    // Rendered as an embedded SVG icon (GPUI tints it via the button's
+    // `text_color`, which it inherits, so hover states follow automatically).
+    let theme_icon = (if is_dark {
+        svg().path("icons/sun.svg")
+    } else {
+        svg().path("icons/moon.svg")
+    })
+    .w(px(16.))
+    .h(px(16.))
+    .text_color(color(t.text_secondary));
     // Chinese → "EN" (switch to English); English → 中 (switch to Chinese).
     let lang_label: &'static str = if is_zh { "EN" } else { "\u{4E2D}" };
 
@@ -175,6 +184,13 @@ pub fn toolbar<T: 'static>(title: &str, t: &ThemeColors, window: &mut Window, cx
     .render(t);
     let close_btn = WindowControlButton::Close.render(t);
 
+    // App logo: the embedded `assets/logo.png` (small rounded square with a
+    // leaf glyph), decoded once and cached.
+    let logo = img(crate::logo::app_logo())
+        .id("titlebar-logo")
+        .w(px(18.))
+        .h(px(18.));
+
     // Draggable title region. It fills the remaining horizontal space so the
     // user can drag the window from anywhere on the left side.
     let drag_area = div()
@@ -184,19 +200,25 @@ pub fn toolbar<T: 'static>(title: &str, t: &ThemeColors, window: &mut Window, cx
         .items_center()
         .h_full()
         .px(spacing::sm())
-        .text_color(color(t.text_primary))
-        .text_size(px(13.))
-        .child(title.to_string())
+        .gap(spacing::sm())
+        .child(logo)
+        .child(
+            div()
+                .child(title.to_string())
+                .text_color(color(t.text_primary))
+                .text_size(px(13.))
+                .font_weight(gpui::FontWeight::MEDIUM),
+        )
         .window_control_area(WindowControlArea::Drag);
 
     div()
         .w_full()
-        .h(px(36.))
+        .h(px(40.))
         .flex()
         .flex_row()
         .items_center()
         .justify_between()
-        .pl(spacing::sm())
+        .pl(spacing::md())
         .bg(color(t.card))
         .border_b_1()
         .border_color(color(t.border))
@@ -229,7 +251,7 @@ pub fn toolbar<T: 'static>(title: &str, t: &ThemeColors, window: &mut Window, cx
 /// Shared compact icon-button look for the toolbar buttons.
 fn toolbar_icon_btn(div: Stateful<Div>, t: &ThemeColors) -> Stateful<Div> {
     div.w(px(32.))
-        .h(px(24.))
+        .h(px(30.))
         .flex()
         .items_center()
         .justify_center()

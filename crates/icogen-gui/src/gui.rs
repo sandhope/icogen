@@ -87,6 +87,21 @@ impl Gui {
         }
     }
 
+    /// Open the native save dialog to choose the `.ico` output path.
+    /// Returns `true` if a path was chosen.
+    pub fn pick_output(&mut self) -> bool {
+        let picked = rfd::FileDialog::new()
+            .add_filter("ICO", &["ico"])
+            .set_file_name(&self.output)
+            .save_file();
+        if let Some(path) = picked {
+            self.output = path.to_string_lossy().into_owned();
+            true
+        } else {
+            false
+        }
+    }
+
     /// Build the `.ico` from the current settings.
     pub fn generate(&mut self, _: &ClickEvent, _: &mut Window, s: &I18nStrings) {
         let src = match &self.src_image {

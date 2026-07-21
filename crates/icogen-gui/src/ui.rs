@@ -13,7 +13,8 @@ use gpui::{
 
 use icogen_ui::color::{color, hex_rgb};
 use icogen_ui::components::{
-    card, drop_hint, drop_icon, drop_zone, section_label, style_button, style_pill,
+    card, drop_hint, drop_icon, drop_zone, folder_button, helper_text, section_label,
+    style_button, style_pill,
 };
 use icogen_ui::i18n::{I18nManager, I18nStrings};
 use icogen_ui::theme::radii;
@@ -35,7 +36,6 @@ impl Render for Gui {
 
         let source = self.source_panel(&t, &s, cx);
         let controls = self.controls_panel(&t, &s, cx);
-        let result = self.result_panel(&t);
         let bar = toolbar::toolbar("IcoGen", &t, window, cx);
         div()
             .size_full()
@@ -55,7 +55,6 @@ impl Render for Gui {
                     .child(source)
                     .child(controls),
             )
-            .child(result)
     }
 }
 
@@ -69,11 +68,6 @@ impl Gui {
         let pick_strings = s.clone();
         let drop = drop_zone(t)
             .id("drop")
-            .bg(if self.src_image.is_some() {
-                color(t.card)
-            } else {
-                color(t.surface)
-            })
             .on_drop(cx.listener(|this, paths: &ExternalPaths, _: &mut Window, cx| {
                 if let Some(p) = paths.paths().first() {
                     if let Ok(image) = core::load_image(p.to_str().unwrap_or("")) {
@@ -108,7 +102,7 @@ impl Gui {
             .cursor_pointer();
 
         card(t)
-            .w(px(340.))
+            .w(px(360.))
             .flex_none()
             .flex()
             .flex_col()
@@ -127,6 +121,7 @@ impl Gui {
                     .text_color(color(t.text_muted))
                     .truncate(),
             )
+            .child(helper_text(s.supported_formats, t))
     }
 
     fn controls_panel(
@@ -226,7 +221,6 @@ impl Gui {
                 cx.notify();
             },
         )), t)
-        .w_full()
         .child(div().child(s.generate_ico).text_size(px(14.)));
 
         let status_color = if self.status_is_error { t.error } else { t.success };
@@ -239,10 +233,41 @@ impl Gui {
             .child(section_label(s.output, t))
             .child(
                 div()
-                    .child(self.output.clone())
-                    .text_size(px(13.))
-                    .text_color(color(t.text_secondary))
-                    .truncate(),
+                    .flex()
+                    .flex_row()
+                    .gap(spacing::sm())
+                    .child(
+                        div()
+                            .flex_1()
+                            .h(px(36.))
+                            .px(spacing::md())
+                            .flex()
+                            .items_center()
+                            .border_1()
+                            .border_color(color(t.border))
+                            .rounded(radii::md())
+                            .bg(color(t.card))
+                            .child(
+                                div()
+                                    .child(self.output.clone())
+                                    .text_size(px(13.))
+                                    .text_color(color(t.text_primary))
+                                    .truncate(),
+                            ),
+                    )
+                    .child(
+                        folder_button(
+                            div()
+                                .id("pick-output")
+                                .cursor_pointer()
+                                .on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
+                                    if this.pick_output() {
+                                        cx.notify();
+                                    }
+                                })),
+                            t,
+                        ),
+                    ),
             )
             .child(section_label(s.sizes, t))
             .child(
@@ -288,51 +313,8 @@ impl Gui {
                 div()
                     .child(self.status.clone())
                     .text_size(px(12.))
-                    .text_color(color(status_color)),
+                    .text_color(color(status_color))
+                    .text_center(),
             )
-    }
-
-    fn result_panel(&self, t: &ThemeColors) -> impl IntoElement + use<> {
-        match &self.result_frames {
-            None => div().h(px(0.)),
-            Some(frames) => {
-                let thumbs: Vec<_> = frames
-                    .iter()
-                    .map(|(sz, buf)| {
-                        div()
-                            .flex_none()
-                            .flex()
-                            .flex_col()
-                            .items_center()
-                            .gap(spacing::xs())
-                            .child(
-                                div()
-                                    .w(px(64.))
-                                    .h(px(64.))
-                                    .border_1()
-                                    .border_color(color(t.border))
-                                    .rounded(radii::md())
-                                    .bg(color(t.card))
-                                    .shadow_sm()
-                                    .child(img(render_img(buf)).w(px(64.)).h(px(64.))),
-                            )
-                            .child(
-                                div()
-                                    .child(sz.to_string())
-                                    .text_size(px(11.))
-                                    .text_color(color(t.text_muted)),
-                            )
-                    })
-                    .collect();
-                card(t)
-                    .p(spacing::lg())
-                    .flex_none()
-                    .flex()
-                    .flex_row()
-                    .flex_wrap()
-                    .gap(spacing::md())
-                    .children(thumbs)
-            }
-        }
     }
 }
