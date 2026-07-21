@@ -1,2 +1,5 @@
-# Keep shell scripts with LF line endings so they stay executable on Unix.
-*.sh text eol=lf
+# Normalize line endings to LF for files that cargo regenerates / git
+# normalizes, so `git add` stops warning about CRLF conversion on Windows
+# (where core.autocrlf=true converts text files to CRLF on checkout).
+Cargo.lock text eol=lf
+.gitattributes text eol=lf
