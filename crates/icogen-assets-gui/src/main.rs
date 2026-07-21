@@ -15,7 +15,9 @@ mod ui;
 use std::path::PathBuf;
 
 use icogen_core as core;
-use icogen_ui::window_state;
+use icogen_ui::{settings, window_state};
+use icogen_ui::i18n::I18nManager;
+use icogen_ui::theme::ThemeManager;
 
 use gpui::{
     App, AppContext, Application, Bounds, px, size, TitlebarOptions, WindowBounds, WindowOptions,
@@ -47,6 +49,11 @@ fn main() {
     }
 
     Application::new().run(move |cx: &mut App| {
+        // Load persisted preferences, then initialize theme + i18n globals.
+        let prefs = settings::load();
+        I18nManager::init(cx, &prefs.language_id);
+        ThemeManager::init(cx, &prefs.theme_id);
+
         let default_bounds = Bounds::centered(None, size(px(820.), px(640.)), cx);
         let window_bounds =
             window_state::load(APP_ID, cx).unwrap_or(WindowBounds::Windowed(default_bounds));

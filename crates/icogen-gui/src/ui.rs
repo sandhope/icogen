@@ -15,9 +15,11 @@ use icogen_ui::color::{color, hex_rgb};
 use icogen_ui::components::{
     card, drop_hint, drop_icon, drop_zone, section_label, style_button, style_pill,
 };
-use icogen_ui::theme::colors;
+use icogen_ui::i18n::{I18nManager, I18nStrings};
 use icogen_ui::theme::radii;
 use icogen_ui::theme::spacing;
+use icogen_ui::theme::{ThemeColors, ThemeManager};
+use icogen_ui::toolbar;
 
 use crate::gui::{Gui, PRESETS};
 
@@ -28,15 +30,20 @@ fn render_img(img: &RgbaImage) -> Arc<RenderImage> {
 
 impl Render for Gui {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let source = self.source_panel(cx);
-        let controls = self.controls_panel(cx);
-        let result = self.result_panel();
+        let t = cx.global::<ThemeManager>().colors;
+        let s = cx.global::<I18nManager>().strings().clone();
+
+        let source = self.source_panel(&t, &s, cx);
+        let controls = self.controls_panel(&t, &s, cx);
+        let result = self.result_panel(&t);
+        let bar = toolbar::toolbar(&t, cx);
         div()
             .size_full()
             .flex()
             .flex_col()
-            .bg(color(colors::BG))
-            .text_color(color(colors::TEXT_PRIMARY))
+            .bg(color(t.bg))
+            .text_color(color(t.text_primary))
+            .child(bar)
             .child(
                 div()
                     .flex()
@@ -53,13 +60,19 @@ impl Render for Gui {
 }
 
 impl Gui {
-    fn source_panel(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
-        let drop = drop_zone()
+    fn source_panel(
+        &mut self,
+        t: &ThemeColors,
+        s: &I18nStrings,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
+        let pick_strings = s.clone();
+        let drop = drop_zone(t)
             .id("drop")
             .bg(if self.src_image.is_some() {
-                color(colors::CARD)
+                color(t.card)
             } else {
-                color(colors::SURFACE)
+                color(t.surface)
             })
             .on_drop(cx.listener(|this, paths: &ExternalPaths, _: &mut Window, cx| {
                 if let Some(p) = paths.paths().first() {
@@ -69,8 +82,8 @@ impl Gui {
                     }
                 }
             }))
-            .on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
-                if this.pick_source() {
+            .on_click(cx.listener(move |this, _: &ClickEvent, _: &mut Window, cx| {
+                if this.pick_source(&pick_strings) {
                     cx.notify();
                 }
             }))
@@ -78,9 +91,9 @@ impl Gui {
                 div()
                     .w(px(180.))
                     .h(px(180.))
-                    .bg(color(colors::CARD))
+                    .bg(color(t.card))
                     .border_1()
-                    .border_color(color(colors::BORDER))
+                    .border_color(color(t.border))
                     .rounded(radii::lg())
                     .shadow_sm()
                     .child(img(render_img(buf)).w(px(180.)).h(px(180.)))
@@ -89,11 +102,11 @@ impl Gui {
                     .flex()
                     .flex_col()
                     .items_center()
-                    .child(drop_icon())
-                    .child(drop_hint("Drag an image here\nor click to browse"))
+                    .child(drop_icon(t))
+                    .child(drop_hint(s.drop_hint, t))
             });
 
-        card()
+        card(t)
             .w(px(340.))
             .flex_none()
             .flex()
@@ -107,20 +120,25 @@ impl Gui {
                         self.src_path
                             .as_ref()
                             .map(|p| p.display().to_string())
-                            .unwrap_or_else(|| "No file selected".to_string())
+                            .unwrap_or_else(|| s.no_file_selected.to_string())
                     ))
                     .text_size(px(12.))
-                    .text_color(color(colors::TEXT_MUTED))
+                    .text_color(color(t.text_muted))
                     .truncate(),
             )
     }
 
-    fn controls_panel(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+    fn controls_panel(
+        &mut self,
+        t: &ThemeColors,
+        s: &I18nStrings,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
         let sizes: Vec<_> = self
             .sizes
             .iter()
             .enumerate()
-            .map(|(i, &s)| {
+            .map(|(i, &sz)| {
                 let on = self.size_on[i];
                 style_pill(
                     div()
@@ -131,8 +149,9 @@ impl Gui {
                             cx.notify();
                         })),
                     on,
+                    t,
                 )
-                .child(div().child(s.to_string()).text_size(px(13.)))
+                .child(div().child(sz.to_string()).text_size(px(13.)))
             })
             .collect();
 
@@ -148,9 +167,9 @@ impl Gui {
                     .rounded(radii::sm())
                     .border_2()
                     .border_color(if self.bg_color == c {
-                        color(colors::TEXT_PRIMARY)
+                        color(t.text_primary)
                     } else {
-                        color(colors::BORDER)
+                        color(t.border)
                     })
                     .bg(color(hex_rgb(c)))
                     .cursor_pointer()
@@ -168,61 +187,63 @@ impl Gui {
                 cx.notify();
             })),
             self.mode == Mode::Contain,
+            t,
         )
-        .child(div().child("Contain").text_size(px(13.)));
+        .child(div().child(s.contain).text_size(px(13.)));
         let mode_cover = style_pill(
             div().id("mode-cover").cursor_pointer().on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
                 this.mode = Mode::Cover;
                 cx.notify();
             })),
             self.mode == Mode::Cover,
+            t,
         )
-        .child(div().child("Cover").text_size(px(13.)));
+        .child(div().child(s.cover).text_size(px(13.)));
         let toggle_transparent = style_pill(
             div().id("toggle-transparent").cursor_pointer().on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
                 this.transparent = !this.transparent;
                 cx.notify();
             })),
             self.transparent,
+            t,
         )
-        .child(div().child("Transparent").text_size(px(13.)));
+        .child(div().child(s.transparent).text_size(px(13.)));
         let toggle_opaque = style_pill(
             div().id("toggle-opaque").cursor_pointer().on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
                 this.transparent = !this.transparent;
                 cx.notify();
             })),
             !self.transparent,
+            t,
         )
-        .child(div().child("Opaque").text_size(px(13.)));
+        .child(div().child(s.opaque).text_size(px(13.)));
+
+        let gen_strings = s.clone();
         let generate = style_button(div().id("generate").cursor_pointer().on_click(cx.listener(
-            |this, ev: &ClickEvent, window, cx| {
-                this.generate(ev, window);
+            move |this, ev: &ClickEvent, window, cx| {
+                this.generate(ev, window, &gen_strings);
                 cx.notify();
             },
-        )))
+        )), t)
         .w_full()
-        .child(div().child("Generate AppIcon.ico").text_size(px(14.)));
+        .child(div().child(s.generate_ico).text_size(px(14.)));
 
-        let status_color = if self.status.starts_with("Error") {
-            colors::ERROR
-        } else {
-            colors::SUCCESS
-        };
+        let status_color = if self.status_is_error { t.error } else { t.success };
 
-        card()
+        card(t)
             .flex_1()
             .flex()
             .flex_col()
             .gap(spacing::lg())
-            .child(section_label("Output"))
+            .child(section_label(s.output, t))
             .child(
                 div()
                     .child(self.output.clone())
                     .text_size(px(13.))
-                    .text_color(color(colors::TEXT_SECONDARY))
+                    .text_color(color(t.text_secondary))
                     .truncate(),
             )
-            .child(section_label("Sizes"))
+            .child(section_label(s.sizes, t))
             .child(
                 div()
                     .flex()
@@ -231,7 +252,7 @@ impl Gui {
                     .gap(spacing::sm())
                     .children(sizes),
             )
-            .child(section_label("Fit mode"))
+            .child(section_label(s.fit_mode, t))
             .child(
                 div()
                     .flex()
@@ -240,7 +261,7 @@ impl Gui {
                     .child(mode_contain)
                     .child(mode_cover),
             )
-            .child(section_label("Background"))
+            .child(section_label(s.background, t))
             .child(
                 div()
                     .flex()
@@ -250,7 +271,7 @@ impl Gui {
                     .child(toggle_opaque),
             )
             .when(!self.transparent, |this| {
-                this.child(section_label("Color"))
+                this.child(section_label(s.color, t))
                     .child(
                         div()
                             .flex()
@@ -270,13 +291,13 @@ impl Gui {
             )
     }
 
-    fn result_panel(&self) -> impl IntoElement + use<> {
+    fn result_panel(&self, t: &ThemeColors) -> impl IntoElement + use<> {
         match &self.result_frames {
             None => div().h(px(0.)),
             Some(frames) => {
                 let thumbs: Vec<_> = frames
                     .iter()
-                    .map(|(s, buf)| {
+                    .map(|(sz, buf)| {
                         div()
                             .flex_none()
                             .flex()
@@ -288,21 +309,21 @@ impl Gui {
                                     .w(px(64.))
                                     .h(px(64.))
                                     .border_1()
-                                    .border_color(color(colors::BORDER))
+                                    .border_color(color(t.border))
                                     .rounded(radii::md())
-                                    .bg(color(colors::CARD))
+                                    .bg(color(t.card))
                                     .shadow_sm()
                                     .child(img(render_img(buf)).w(px(64.)).h(px(64.))),
                             )
                             .child(
                                 div()
-                                    .child(s.to_string())
+                                    .child(sz.to_string())
                                     .text_size(px(11.))
-                                    .text_color(color(colors::TEXT_MUTED)),
+                                    .text_color(color(t.text_muted)),
                             )
                     })
                     .collect();
-                card()
+                card(t)
                     .p(spacing::lg())
                     .flex_none()
                     .flex()

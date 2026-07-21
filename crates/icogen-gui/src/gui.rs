@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 
 use icogen_core::{self as core, Mode};
+use icogen_ui::i18n::I18nStrings;
 use image::RgbaImage;
 
 use gpui::{ClickEvent, Window};
@@ -27,6 +28,8 @@ pub struct Gui {
     pub transparent: bool,
     pub bg_color: image::Rgba<u8>,
     pub status: String,
+    /// Whether `status` is an error (drives its color in the UI).
+    pub status_is_error: bool,
     pub result_frames: Option<Vec<(u32, RgbaImage)>>,
 }
 
@@ -43,6 +46,7 @@ impl Gui {
             transparent: true,
             bg_color: image::Rgba([43, 108, 255, 255]),
             status: String::new(),
+            status_is_error: false,
             result_frames: None,
         }
     }
@@ -63,9 +67,9 @@ impl Gui {
 
     /// Open the native file dialog and load the chosen image as the source.
     /// Returns `true` if a new image was loaded.
-    pub fn pick_source(&mut self) -> bool {
+    pub fn pick_source(&mut self, s: &I18nStrings) -> bool {
         let picked = rfd::FileDialog::new()
-            .add_filter("Image", &["png", "jpg", "jpeg", "bmp", "gif", "webp"])
+            .add_filter(s.image_filter, &["png", "jpg", "jpeg", "bmp", "gif", "webp"])
             .pick_file();
         match picked {
             Some(path) => match core::load_image(path.to_str().unwrap_or("")) {
@@ -74,7 +78,8 @@ impl Gui {
                     true
                 }
                 Err(e) => {
-                    self.status = format!("Error loading image: {e}");
+                    self.status = format!("{}{e}", s.error_loading_image);
+                    self.status_is_error = true;
                     false
                 }
             },
@@ -83,11 +88,12 @@ impl Gui {
     }
 
     /// Build the `.ico` from the current settings.
-    pub fn generate(&mut self, _: &ClickEvent, _: &mut Window) {
+    pub fn generate(&mut self, _: &ClickEvent, _: &mut Window, s: &I18nStrings) {
         let src = match &self.src_image {
             Some(img) => img.clone(),
             None => {
-                self.status = "Load an image first (drag it on, or click Browse).".into();
+                self.status = s.load_image_first.into();
+                self.status_is_error = false;
                 return;
             }
         };
@@ -102,7 +108,8 @@ impl Gui {
             .collect();
 
         if active.is_empty() {
-            self.status = "Select at least one size.".into();
+            self.status = s.select_at_least_one_size.into();
+            self.status_is_error = false;
             return;
         }
 
@@ -133,10 +140,12 @@ impl Gui {
                     .map(|s| format!("{s}x{s}"))
                     .collect::<Vec<_>>()
                     .join(", ");
-                self.status = format!("Saved {}  ({})", self.output, list);
+                self.status = format!("{}{}  ({})", s.saved_prefix, self.output, list);
+                self.status_is_error = false;
             }
             Err(e) => {
-                self.status = format!("Error: {e}");
+                self.status = format!("{}{e}", s.error_prefix);
+                self.status_is_error = true;
             }
         }
     }

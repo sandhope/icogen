@@ -8,3 +8,4 @@ license = "MIT"
 [dependencies]
 gpui = "0.2.2"
 image = "0.25"
+sys-locale = "0.3"

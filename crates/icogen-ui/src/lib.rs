@@ -6,5 +6,8 @@
 
 pub mod color;
 pub mod components;
+pub mod i18n;
+pub mod settings;
 pub mod theme;
+pub mod toolbar;
 pub mod window_state;

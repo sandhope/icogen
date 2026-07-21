@@ -14,9 +14,11 @@ use icogen_ui::color::color;
 use icogen_ui::components::{
     card, drop_hint, drop_icon, drop_zone, section_label, style_button, style_pill,
 };
-use icogen_ui::theme::colors;
+use icogen_ui::i18n::{I18nManager, I18nStrings};
 use icogen_ui::theme::radii;
 use icogen_ui::theme::spacing;
+use icogen_ui::theme::{ThemeColors, ThemeManager};
+use icogen_ui::toolbar;
 
 use crate::gui::{Gui, TARGETS};
 
@@ -27,15 +29,20 @@ fn render_img(img: &RgbaImage) -> Arc<RenderImage> {
 
 impl Render for Gui {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let source = self.source_panel(cx);
-        let controls = self.controls_panel(cx);
-        let result = self.result_panel();
+        let t = cx.global::<ThemeManager>().colors;
+        let s = cx.global::<I18nManager>().strings().clone();
+
+        let source = self.source_panel(&t, &s, cx);
+        let controls = self.controls_panel(&t, &s, cx);
+        let result = self.result_panel(&t);
+        let bar = toolbar::toolbar(&t, cx);
         div()
             .size_full()
             .flex()
             .flex_col()
-            .bg(color(colors::BG))
-            .text_color(color(colors::TEXT_PRIMARY))
+            .bg(color(t.bg))
+            .text_color(color(t.text_primary))
+            .child(bar)
             .child(
                 div()
                     .flex()
@@ -52,13 +59,19 @@ impl Render for Gui {
 }
 
 impl Gui {
-    fn source_panel(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
-        let drop = drop_zone()
+    fn source_panel(
+        &mut self,
+        t: &ThemeColors,
+        s: &I18nStrings,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
+        let pick_strings = s.clone();
+        let drop = drop_zone(t)
             .id("drop")
             .bg(if self.src_image.is_some() {
-                color(colors::CARD)
+                color(t.card)
             } else {
-                color(colors::SURFACE)
+                color(t.surface)
             })
             .on_drop(cx.listener(|this, paths: &ExternalPaths, _: &mut Window, cx| {
                 if let Some(p) = paths.paths().first() {
@@ -68,8 +81,8 @@ impl Gui {
                     }
                 }
             }))
-            .on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
-                if this.pick_source() {
+            .on_click(cx.listener(move |this, _: &ClickEvent, _: &mut Window, cx| {
+                if this.pick_source(&pick_strings) {
                     cx.notify();
                 }
             }))
@@ -77,9 +90,9 @@ impl Gui {
                 div()
                     .w(px(180.))
                     .h(px(180.))
-                    .bg(color(colors::CARD))
+                    .bg(color(t.card))
                     .border_1()
-                    .border_color(color(colors::BORDER))
+                    .border_color(color(t.border))
                     .rounded(radii::lg())
                     .shadow_sm()
                     .child(img(render_img(buf)).w(px(180.)).h(px(180.)))
@@ -88,11 +101,11 @@ impl Gui {
                     .flex()
                     .flex_col()
                     .items_center()
-                    .child(drop_icon())
-                    .child(drop_hint("Drag an image here\nor click to browse"))
+                    .child(drop_icon(t))
+                    .child(drop_hint(s.drop_hint, t))
             });
 
-        card()
+        card(t)
             .w(px(340.))
             .flex_none()
             .flex()
@@ -106,15 +119,20 @@ impl Gui {
                         self.src_path
                             .as_ref()
                             .map(|p| p.display().to_string())
-                            .unwrap_or_else(|| "No file selected".to_string())
+                            .unwrap_or_else(|| s.no_file_selected.to_string())
                     ))
                     .text_size(px(12.))
-                    .text_color(color(colors::TEXT_MUTED))
+                    .text_color(color(t.text_muted))
                     .truncate(),
             )
     }
 
-    fn controls_panel(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+    fn controls_panel(
+        &mut self,
+        t: &ThemeColors,
+        s: &I18nStrings,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
         let targets: Vec<_> = TARGETS
             .iter()
             .enumerate()
@@ -129,40 +147,38 @@ impl Gui {
                             cx.notify();
                         })),
                     on,
+                    t,
                 )
                 .child(div().child(format!("{name}\n{}x{h}", *w)).text_size(px(12.)))
             })
             .collect();
 
+        let gen_strings = s.clone();
         let generate = style_button(div().id("generate-assets").cursor_pointer().on_click(cx.listener(
-            |this, _: &ClickEvent, _: &mut Window, cx| {
-                this.generate();
+            move |this, _: &ClickEvent, _: &mut Window, cx| {
+                this.generate(&gen_strings);
                 cx.notify();
             },
-        )))
+        )), t)
         .w_full()
-        .child(div().child("Generate asset PNGs").text_size(px(14.)));
+        .child(div().child(s.generate_assets).text_size(px(14.)));
 
-        let status_color = if self.status.starts_with("Error") {
-            colors::ERROR
-        } else {
-            colors::SUCCESS
-        };
+        let status_color = if self.status_is_error { t.error } else { t.success };
 
-        card()
+        card(t)
             .flex_1()
             .flex()
             .flex_col()
             .gap(spacing::lg())
-            .child(section_label("Output directory"))
+            .child(section_label(s.output_directory, t))
             .child(
                 div()
                     .child(self.out_dir.clone())
                     .text_size(px(13.))
-                    .text_color(color(colors::TEXT_SECONDARY))
+                    .text_color(color(t.text_secondary))
                     .truncate(),
             )
-            .child(section_label("Targets"))
+            .child(section_label(s.targets, t))
             .child(
                 div()
                     .flex()
@@ -181,7 +197,7 @@ impl Gui {
             )
     }
 
-    fn result_panel(&self) -> impl IntoElement + use<> {
+    fn result_panel(&self, t: &ThemeColors) -> impl IntoElement + use<> {
         match &self.result_thumbs {
             None => div().h(px(0.)),
             Some(thumbs) => {
@@ -199,9 +215,9 @@ impl Gui {
                                     .w(px(80.))
                                     .h(px(80.))
                                     .border_1()
-                                    .border_color(color(colors::BORDER))
+                                    .border_color(color(t.border))
                                     .rounded(radii::md())
-                                    .bg(color(colors::CARD))
+                                    .bg(color(t.card))
                                     .shadow_sm()
                                     .flex()
                                     .items_center()
@@ -212,12 +228,12 @@ impl Gui {
                                 div()
                                     .child(label.clone())
                                     .text_size(px(10.))
-                                    .text_color(color(colors::TEXT_MUTED))
+                                    .text_color(color(t.text_muted))
                                     .text_center(),
                             )
                     })
                     .collect();
-                card()
+                card(t)
                     .p(spacing::lg())
                     .flex_none()
                     .flex()

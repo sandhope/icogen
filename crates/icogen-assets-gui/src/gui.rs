@@ -3,6 +3,7 @@
 use std::path::{Path, PathBuf};
 
 use icogen_core as core;
+use icogen_ui::i18n::I18nStrings;
 use image::RgbaImage;
 
 /// (file name, width, height) — the 8 WinUI 3 / App SDK asset PNGs.
@@ -31,6 +32,8 @@ pub struct Gui {
     pub out_dir: String,
     pub target_on: Vec<bool>,
     pub status: String,
+    /// Whether `status` is an error (drives its color in the UI).
+    pub status_is_error: bool,
     pub result_thumbs: Option<Vec<(String, RgbaImage)>>,
 }
 
@@ -42,6 +45,7 @@ impl Gui {
             out_dir: "Assets".to_string(),
             target_on: vec![true; TARGETS.len()],
             status: String::new(),
+            status_is_error: false,
             result_thumbs: None,
         }
     }
@@ -54,9 +58,9 @@ impl Gui {
 
     /// Open the native file dialog and load the chosen image as the source.
     /// Returns `true` if a new image was loaded.
-    pub fn pick_source(&mut self) -> bool {
+    pub fn pick_source(&mut self, s: &I18nStrings) -> bool {
         let picked = rfd::FileDialog::new()
-            .add_filter("Image", &["png", "jpg", "jpeg", "bmp", "gif", "webp"])
+            .add_filter(s.image_filter, &["png", "jpg", "jpeg", "bmp", "gif", "webp"])
             .pick_file();
         match picked {
             Some(path) => match core::load_image(path.to_str().unwrap_or("")) {
@@ -65,7 +69,8 @@ impl Gui {
                     true
                 }
                 Err(e) => {
-                    self.status = format!("Error loading image: {e}");
+                    self.status = format!("{}{e}", s.error_loading_image);
+                    self.status_is_error = true;
                     false
                 }
             },
@@ -74,18 +79,20 @@ impl Gui {
     }
 
     /// Write the enabled asset PNGs to `out_dir/`.
-    pub fn generate(&mut self) {
+    pub fn generate(&mut self, s: &I18nStrings) {
         let src = match &self.src_image {
             Some(img) => img.clone(),
             None => {
-                self.status = "Load an image first (drag it on, or click Browse).".into();
+                self.status = s.load_image_first.into();
+                self.status_is_error = false;
                 return;
             }
         };
 
         let out_dir = Path::new(&self.out_dir);
         if let Err(e) = std::fs::create_dir_all(out_dir) {
-            self.status = format!("Error creating {}: {e}", self.out_dir);
+            self.status = format!("{}{}{}{e}", s.error_creating_prefix, self.out_dir, s.error_creating_middle);
+            self.status_is_error = true;
             return;
         }
 
@@ -103,20 +110,23 @@ impl Gui {
                     thumbs.push((format!("{name} ({}x{h})", *w), img));
                 }
                 Err(e) => {
-                    self.status = format!("Error writing {name}: {e}");
+                    self.status = format!("{}{name}{}{e}", s.error_writing_prefix, s.error_writing_middle);
+                    self.status_is_error = true;
                     return;
                 }
             }
         }
 
         self.result_thumbs = Some(thumbs);
-        self.status = if saved == 0 {
-            "Select at least one target.".into()
+        if saved == 0 {
+            self.status = s.select_at_least_one_target.into();
+            self.status_is_error = false;
         } else {
-            format!(
-                "Saved {saved} asset PNGs to {}/  (AppIcon.ico unchanged)",
-                self.out_dir
-            )
-        };
+            self.status = format!(
+                "{}{}{}{}{}",
+                s.saved_assets_prefix, saved, s.saved_assets_middle, self.out_dir, s.saved_assets_suffix
+            );
+            self.status_is_error = false;
+        }
     }
 }

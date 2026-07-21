@@ -190,3 +190,19 @@ Python 脚本。
   没有立即更新，请重启 `explorer.exe` 或重建图标缓存。
 - **源图质量**：图标最终显示得很小，源图越清晰简洁（建议 512×512 以上），
   16 px / 24 px 等小尺寸效果越干净。
+
+## 支持项目
+
+如果这个项目对你有帮助，欢迎请我喝杯咖啡 ☕
+
+<table>
+  <tr>
+    <td>
+      <img src="sponsor/weixin.jpg" width="200"/>
+    </td>
+    <td width="100" align="center" > 🙏 </td>
+    <td>
+      <img src="sponsor/alipay.jpg" width="200"/>
+    </td>
+  </tr>
+</table>
