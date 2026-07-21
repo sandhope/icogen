@@ -2455,7 +2455,7 @@ dependencies = [
 
 [[package]]
 name = "icogen"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "icogen-core",
  "image",
@@ -2463,7 +2463,7 @@ dependencies = [
 
 [[package]]
 name = "icogen-app"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "gpui",
  "gpui_platform",
@@ -2475,7 +2475,7 @@ dependencies = [
 
 [[package]]
 name = "icogen-assets"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "icogen-core",
  "image",
@@ -2483,7 +2483,7 @@ dependencies = [
 
 [[package]]
 name = "icogen-assets-gui"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "gpui",
  "gpui_platform",
@@ -2495,14 +2495,14 @@ dependencies = [
 
 [[package]]
 name = "icogen-core"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "image",
 ]
 
 [[package]]
 name = "icogen-gui"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "gpui",
  "gpui_platform",
@@ -2514,7 +2514,7 @@ dependencies = [
 
 [[package]]
 name = "icogen-ui"
-version = "0.0.1"
+version = "0.0.3"
 dependencies = [
  "gpui",
  "image",
