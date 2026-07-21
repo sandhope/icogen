@@ -3,3 +3,5 @@
 # (where core.autocrlf=true converts text files to CRLF on checkout).
 Cargo.lock text eol=lf
 .gitattributes text eol=lf
+Cargo.toml text eol=lf
+*.rs text eol=lf
