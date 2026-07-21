@@ -57,7 +57,7 @@ fn main() {
         I18nManager::init(cx, &prefs.language_id);
         ThemeManager::init(cx, &prefs.theme_id);
 
-        let default_bounds = Bounds::centered(None, size(px(960.), px(640.)), cx);
+        let default_bounds = Bounds::centered(None, size(px(1200.), px(760.)), cx);
         let window_bounds =
             window_state::load(APP_ID, cx).unwrap_or(WindowBounds::Windowed(default_bounds));
         cx.open_window(

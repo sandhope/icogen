@@ -3,7 +3,7 @@
 > 中文文档 ｜ **English:** [README.md](README.md)
 
 从单张源图生成 Windows 应用图标（`AppIcon.ico`）以及 WinUI 3 / Windows App
-SDK 所需的资源 PNG。每项功能同时提供 CLI 和基于 GPUI 的图形界面 —— 共四个
+SDK 所需的资源 PNG。每项功能同时提供 CLI 和基于 GPUI 的图形界面 —— 共五个
 独立 `.exe`，零运行时依赖。
 
 ## 快速开始
@@ -19,7 +19,8 @@ icogen.exe logo.png
 icogen-assets.exe logo.png
 ```
 
-想用图形界面？运行 `icogen-gui.exe` / `icogen-assets-gui.exe`，把图片拖进
+想用图形界面？运行 `icogen-gui.exe` / `icogen-assets-gui.exe` 处理单项任务，
+或用 `icogen-app.exe`——带 `Ico` / `Assets` 顶部标签栏的整合工具——把图片拖进
 窗口（或点击选择文件），选好选项即可生成。
 
 ## 使用方法
@@ -62,11 +63,12 @@ icogen-assets <输入图片> [选项]
 
 ### 图形界面
 
-`icogen-gui` 和 `icogen-assets-gui` 以 GPUI 窗口提供同样的功能：拖放或原生
+`icogen-gui` 和 `icogen-assets-gui` 各自以 GPUI 窗口提供单项任务：拖放或原生
 文件对话框、逐个尺寸/目标的开关、每一帧的实时预览、可编辑的输出路径。
-`icogen-gui` 还提供 contain/cover 模式、背景色预设和内边距。两者都支持命令行
-传入可选的图片路径和 `-o <输出>`，并会记住窗口的大小与位置，下次启动时
-恢复。
+`icogen-gui` 还提供 contain/cover 模式、背景色预设和内边距。`icogen-app` 是整合
+工具——顶部标签栏在 `Ico`（AppIcon.ico）与 `Assets`（WinUI 3 PNG 集）之间切换，
+复用同一份源图。三者都支持命令行传入可选的图片路径和 `-o <输出>`，并记住窗口
+的大小与位置，下次启动时恢复。
 
 ## 生成内容
 
@@ -101,7 +103,7 @@ icogen-assets <输入图片> [选项]
 需要 [Rust 工具链](https://rustup.rs/) 和 Windows 10/11 SDK（`rc.exe` 用于
 把窗口图标嵌入 GUI 二进制）—— 均仅编译时需要。
 
-一键构建 —— 编译全部四个二进制并拷贝到 `dist/`：
+一键构建 —— 编译全部五个二进制并拷贝到 `dist/`：
 
 ```powershell
 # Windows PowerShell
@@ -130,6 +132,7 @@ icogen/
 │   └── preview.png
 ├── crates/                 # 全部二进制与库
 │   ├── icogen/             # icogen.exe — AppIcon.ico CLI
+│   ├── icogen-app/         # icogen-app.exe — 整合 GUI（Ico + Assets 标签）         
 │   ├── icogen-assets/      # icogen-assets.exe — WinUI 3 资源 CLI
 │   ├── icogen-assets-gui/  # icogen-assets-gui.exe — WinUI 3 资源 GUI
 │   ├── icogen-core/        # 公共逻辑（lib）
@@ -152,7 +155,7 @@ icogen/
 `icogen` = **ico**n **gen**erator（图标生成器）。CLI 使用裸产品名，GUI 加
 `-gui` 后缀，目录、包名与 `.exe` 文件名三者始终一致。`icogen-core` 承载公共
 的图片加载、缩放与 ICO/PNG 编码逻辑；`icogen-ui` 承载公共的 GPUI 组件与配色，
-保证两个 GUI 风格同步。
+保证三个 GUI 风格同步。
 
 ## Python 参考脚本
 
@@ -170,12 +173,11 @@ Python 脚本。
 
 ## CI 与发布
 
-`.github/workflows/` 下有两个工作流：
+`.github/workflows/` 下有一个工作流：
 
-- **`ci.yml`** —— 每次 push / pull request 时构建 workspace，并把四个
-  `.exe` 作为构件 `icogen-windows` 上传。
-- **`release.yml`** —— 推送 `v*` tag 时发布 GitHub Release（也可在 Actions
-  页面手动触发）：
+- **`release.yml`** —— 推送 `v*` tag（或在 Actions 页面手动触发）时，对整个
+  workspace 执行 `cargo build --release`，并把 `dist/release/` 下的全部 `.exe`
+  （当前共五个）上传到 GitHub Release：
 
   ```bash
   git tag v1.0.0

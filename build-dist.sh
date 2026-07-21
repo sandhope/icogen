@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build all four binaries and copy them into dist/ (project root).
+# Build all five binaries and copy them into dist/ (project root).
 # Run from anywhere:  ./build-dist.sh
 set -euo pipefail
 
@@ -10,10 +10,11 @@ DistDir="$ProjectRoot/dist"
 cargo build --release \
     -p icogen \
     -p icogen-gui \
+    -p icogen-app \
     -p icogen-assets \
     -p icogen-assets-gui
 
-EXES=(icogen.exe icogen-gui.exe icogen-assets.exe icogen-assets-gui.exe)
+EXES=(icogen.exe icogen-gui.exe icogen-app.exe icogen-assets.exe icogen-assets-gui.exe)
 for exe in "${EXES[@]}"; do
     src="$ReleaseDir/$exe"
     [ -f "$src" ] || { echo "Missing build artifact: $src" >&2; exit 1; }

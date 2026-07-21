@@ -2462,6 +2462,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "icogen-app"
+version = "0.0.1"
+dependencies = [
+ "gpui",
+ "gpui_platform",
+ "icogen-core",
+ "icogen-ui",
+ "image",
+ "rfd",
+]
+
+[[package]]
 name = "icogen-assets"
 version = "0.0.1"
 dependencies = [

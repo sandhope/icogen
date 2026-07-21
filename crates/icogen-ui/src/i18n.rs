@@ -64,6 +64,10 @@ pub struct I18nStrings {
     pub menu_language: &'static str,
     pub menu_lang_zh: &'static str,
     pub menu_lang_en: &'static str,
+
+    // --- Combined app tab bar ---
+    pub tab_ico: &'static str,
+    pub tab_assets: &'static str,
 }
 
 impl I18nStrings {
@@ -108,6 +112,9 @@ impl I18nStrings {
             menu_language: "Language",
             menu_lang_zh: "中文",
             menu_lang_en: "English",
+
+            tab_ico: "Ico",
+            tab_assets: "Assets",
         }
     }
 
@@ -152,6 +159,9 @@ impl I18nStrings {
             menu_language: "语言",
             menu_lang_zh: "中文",
             menu_lang_en: "English",
+
+            tab_ico: "图标",
+            tab_assets: "资源",
         }
     }
 

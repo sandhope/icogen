@@ -6,6 +6,7 @@ members = [
     "crates/icogen-gui",
     "crates/icogen-assets",
     "crates/icogen-assets-gui",
+    "crates/icogen-app",
     "crates/icogen-ui",
 ]
 

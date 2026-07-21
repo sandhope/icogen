@@ -4,7 +4,7 @@
 
 Generate Windows app icons (`AppIcon.ico`) and WinUI 3 / Windows App SDK asset
 PNGs from a single source image. Each task ships as a CLI and a GPUI-based GUI —
-four standalone `.exe` files in total, with zero runtime dependencies.
+five standalone `.exe` files in total, with zero runtime dependencies.
 
 ## Quick start
 
@@ -19,8 +19,9 @@ icogen.exe logo.png
 icogen-assets.exe logo.png
 ```
 
-Prefer clicking? Run `icogen-gui.exe` / `icogen-assets-gui.exe`, drag an image
-onto the window (or click to browse), pick options, and generate.
+Prefer clicking? Run `icogen-gui.exe` / `icogen-assets-gui.exe` for a single
+task, or `icogen-app.exe` for the combined tool with an `Ico` / `Assets` tab bar —
+drag an image onto the window (or click to browse), pick options, and generate.
 
 ## Usage
 
@@ -62,12 +63,14 @@ current directory — run it from your project root.
 
 ### GUI
 
-`icogen-gui` and `icogen-assets-gui` expose the same functionality in a GPUI
-window: drag & drop or a native file dialog, per-size / per-target toggles, a
-live preview of every generated frame, and an editable output path. `icogen-gui`
-additionally offers contain/cover mode, background color presets and inner
-padding. Both accept an optional image path and `-o <output>` on the command
-line, and both remember their window size and position between sessions.
+`icogen-gui` and `icogen-assets-gui` expose a single task in a GPUI window:
+drag & drop or a native file dialog, per-size / per-target toggles, a live
+preview of every generated frame, and an editable output path. `icogen-gui`
+further offers contain/cover mode, background color presets and inner padding.
+`icogen-app` is the combined tool — a top tab bar switches between the `Ico`
+(AppIcon.ico) and `Assets` (WinUI 3 PNGs) workflows, reusing one shared source
+image. All three accept an optional image path and `-o <output>` on the command
+line, and remember their window size and position between sessions.
 
 ## What it generates
 
@@ -103,7 +106,7 @@ on a transparent canvas.
 Requires the [Rust toolchain](https://rustup.rs/) and the Windows 10/11 SDK
 (`rc.exe` embeds the window icon into the GUI binaries) — both compile-time only.
 
-One-click build — compiles all four binaries and copies them into `dist/`:
+One-click build — compiles all five binaries and copies them into `dist/`:
 
 ```powershell
 # Windows PowerShell
@@ -133,6 +136,7 @@ icogen/
 │   └── preview.png
 ├── crates/                 # all binaries + libs
 │   ├── icogen/             # icogen.exe — AppIcon.ico CLI
+│   ├── icogen-app/         # icogen-app.exe — combined GUI (Ico + Assets tabs)
 │   ├── icogen-assets/      # icogen-assets.exe — WinUI 3 assets CLI
 │   ├── icogen-assets-gui/  # icogen-assets-gui.exe — WinUI 3 assets GUI
 │   ├── icogen-core/        # shared logic (lib)
@@ -155,8 +159,8 @@ icogen/
 `icogen` = **ico**n **gen**erator. CLI binaries take the bare product name and
 GUI variants add `-gui`, so directory, package and `.exe` names always match.
 `icogen-core` holds the shared image-loading, resizing and ICO/PNG encoding
-logic; `icogen-ui` holds the shared GPUI components and color palette so both
-GUIs stay in sync.
+logic; `icogen-ui` holds the shared GPUI components and color palette so all
+three GUIs stay in sync.
 
 ## Python reference scripts
 
@@ -174,12 +178,11 @@ self-contained; reach for the scripts when you want to adjust behavior.
 
 ## CI & releases
 
-Two GitHub Actions workflows live in `.github/workflows/`:
+One GitHub Actions workflow lives in `.github/workflows/`:
 
-- **`ci.yml`** — builds the workspace on every push / pull request and uploads
-  the four `.exe` files as artifact `icogen-windows`.
-- **`release.yml`** — publishes a GitHub Release when a `v*` tag is pushed (or
-  manually from the Actions tab):
+- **`release.yml`** — on every push of a `v*` tag (or manual dispatch from the
+  Actions tab) it runs `cargo build --release` for the whole workspace and
+  uploads every `.exe` in `dist/release/` (currently five) to a GitHub Release:
 
   ```bash
   git tag v1.0.0
