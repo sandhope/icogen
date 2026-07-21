@@ -12,7 +12,7 @@ use gpui::{
 
 use icogen_ui::color::color;
 use icogen_ui::components::{
-    card, drop_hint, drop_zone, section_label, style_button, style_pill,
+    card, drop_hint, drop_icon, drop_zone, section_label, style_button, style_pill,
 };
 use icogen_ui::theme::colors;
 use icogen_ui::theme::radii;
@@ -88,15 +88,7 @@ impl Gui {
                     .flex()
                     .flex_col()
                     .items_center()
-                    .gap(spacing::sm())
-                    .child(
-                        div()
-                            .w(px(48.))
-                            .h(px(48.))
-                            .rounded(radii::md())
-                            .bg(color(colors::ACCENT_LIGHT))
-                            .mb(spacing::sm()),
-                    )
+                    .child(drop_icon())
                     .child(drop_hint("Drag an image here\nor click to browse"))
             });
 
@@ -149,7 +141,13 @@ impl Gui {
             },
         )))
         .w_full()
-        .child(div().child("Generate asset PNGs").text_size(px(15.)));
+        .child(div().child("Generate asset PNGs").text_size(px(14.)));
+
+        let status_color = if self.status.starts_with("Error") {
+            colors::ERROR
+        } else {
+            colors::SUCCESS
+        };
 
         card()
             .flex_1()
@@ -179,7 +177,7 @@ impl Gui {
                 div()
                     .child(self.status.clone())
                     .text_size(px(12.))
-                    .text_color(color(colors::SUCCESS)),
+                    .text_color(color(status_color)),
             )
     }
 

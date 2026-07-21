@@ -33,14 +33,16 @@ pub fn section_label(text: impl Into<SharedString>) -> Div {
             div()
                 .child(text.into())
                 .text_size(px(11.))
-                .text_color(color(colors::TEXT_MUTED)),
+                .text_color(color(colors::TEXT_MUTED))
+                .font_weight(gpui::FontWeight::MEDIUM),
         )
 }
 
 /// Apply the shared primary-button look to a `Stateful<Div>` the caller built.
-/// The caller must create the element with `div().id(...)` (which yields the
-/// `Stateful<Div>` that `on_click` / `cursor_pointer` live on) and attach
-/// `.on_click(...)` before passing it in.
+/// Solid indigo fill, white label, generous padding. The caller must create
+/// the element with `div().id(...)` (which yields the `Stateful<Div>` that
+/// `on_click` / `cursor_pointer` live on) and attach `.on_click(...)` before
+/// passing it in.
 pub fn style_button(div: Stateful<Div>) -> Stateful<Div> {
     div.px(spacing::xl())
         .py(spacing::md())
@@ -49,11 +51,14 @@ pub fn style_button(div: Stateful<Div>) -> Stateful<Div> {
         .text_color(white())
         .shadow_sm()
         .cursor_pointer()
+        .font_weight(gpui::FontWeight::MEDIUM)
 }
 
 /// Apply the shared selectable-pill look. `selected` toggles the filled style.
-/// Same call-site contract as `style_button`: pass a `Stateful<Div>` that
-/// already has `.on_click(...)` attached.
+/// Unselected: light slate surface, slate border, muted text.
+/// Selected:   very light indigo tint, indigo border, indigo text.
+/// The caller supplies a `Stateful<Div>` with `.id(...)` and `.on_click(...)`
+/// already attached.
 pub fn style_pill(div: Stateful<Div>, selected: bool) -> Stateful<Div> {
     div.px(spacing::md())
         .py(spacing::sm())
@@ -65,15 +70,24 @@ pub fn style_pill(div: Stateful<Div>, selected: bool) -> Stateful<Div> {
             color(colors::BORDER)
         })
         .bg(if selected {
-            color(colors::ACCENT)
+            color(colors::ACCENT_TINT)
         } else {
             color(colors::SURFACE)
         })
-        .text_color(if selected { white() } else { color(colors::TEXT_SECONDARY) })
+        .text_color(if selected {
+            color(colors::ACCENT)
+        } else {
+            color(colors::TEXT_SECONDARY)
+        })
+        .font_weight(if selected {
+            gpui::FontWeight::MEDIUM
+        } else {
+            gpui::FontWeight::NORMAL
+        })
         .cursor_pointer()
 }
 
-/// A full-width header bar with an accent icon and title.
+/// A full-width header bar with a sober accent icon and title.
 pub fn header(title: impl Into<SharedString>) -> Div {
     div()
         .w_full()
@@ -96,7 +110,8 @@ pub fn header(title: impl Into<SharedString>) -> Div {
             div()
                 .child(title.into())
                 .text_size(px(16.))
-                .text_color(color(colors::TEXT_PRIMARY)),
+                .text_color(color(colors::TEXT_PRIMARY))
+                .font_weight(gpui::FontWeight::MEDIUM),
         )
 }
 
@@ -114,6 +129,27 @@ pub fn drop_zone() -> Div {
         .flex_col()
         .items_center()
         .justify_center()
+}
+
+/// The rounded square shown in the center of an empty drop zone. Sober neutral
+/// slate — no accent tint, no pink.
+pub fn drop_icon() -> Div {
+    div()
+        .w(px(56.))
+        .h(px(56.))
+        .rounded(radii::lg())
+        .bg(color(colors::DROP_ICON_BG))
+        .flex()
+        .items_center()
+        .justify_center()
+        .child(
+            div()
+                .w(px(22.))
+                .h(px(22.))
+                .rounded(radii::sm())
+                .bg(color(colors::DROP_ICON_FG)),
+        )
+        .mb(spacing::sm())
 }
 
 /// Small helper for centering placeholder text inside a drop zone.

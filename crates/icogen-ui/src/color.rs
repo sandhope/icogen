@@ -34,7 +34,8 @@ pub fn color(hex: u32) -> Hsla {
         }
         hh
     };
-    Hsla { h, s, l, a: 1.0 }
+    // GPUI's Hsla expects h in 0..1 (normalized), not degrees.
+    Hsla { h: h / 360.0, s, l, a: 1.0 }
 }
 
 /// Pack an `Rgba<u8>` into `0xRRGGBB` for `color()`.

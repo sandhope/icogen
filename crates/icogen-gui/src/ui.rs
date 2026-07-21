@@ -13,7 +13,7 @@ use gpui::{
 
 use icogen_ui::color::{color, hex_rgb};
 use icogen_ui::components::{
-    card, drop_hint, drop_zone, section_label, style_button, style_pill,
+    card, drop_hint, drop_icon, drop_zone, section_label, style_button, style_pill,
 };
 use icogen_ui::theme::colors;
 use icogen_ui::theme::radii;
@@ -89,15 +89,7 @@ impl Gui {
                     .flex()
                     .flex_col()
                     .items_center()
-                    .gap(spacing::sm())
-                    .child(
-                        div()
-                            .w(px(48.))
-                            .h(px(48.))
-                            .rounded(radii::md())
-                            .bg(color(colors::ACCENT_LIGHT))
-                            .mb(spacing::sm()),
-                    )
+                    .child(drop_icon())
                     .child(drop_hint("Drag an image here\nor click to browse"))
             });
 
@@ -147,7 +139,7 @@ impl Gui {
         let swatches: Vec<_> = PRESETS
             .iter()
             .enumerate()
-            .map(|(idx, (name, swatch))| {
+            .map(|(idx, (_name, swatch))| {
                 let c = *swatch;
                 div()
                     .id(("bg", idx as u32))
@@ -158,7 +150,7 @@ impl Gui {
                     .border_color(if self.bg_color == c {
                         color(colors::TEXT_PRIMARY)
                     } else {
-                        color(colors::BORDER_STRONG)
+                        color(colors::BORDER)
                     })
                     .bg(color(hex_rgb(c)))
                     .cursor_pointer()
@@ -167,12 +159,6 @@ impl Gui {
                         this.bg_color = c;
                         cx.notify();
                     }))
-                    .child(
-                        div()
-                            .child(name.to_string())
-                            .text_size(px(9.))
-                            .text_color(color(colors::TEXT_MUTED)),
-                    )
             })
             .collect();
 
@@ -183,7 +169,7 @@ impl Gui {
             })),
             self.mode == Mode::Contain,
         )
-        .child(div().child("Contain"));
+        .child(div().child("Contain").text_size(px(13.)));
         let mode_cover = style_pill(
             div().id("mode-cover").cursor_pointer().on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
                 this.mode = Mode::Cover;
@@ -191,7 +177,7 @@ impl Gui {
             })),
             self.mode == Mode::Cover,
         )
-        .child(div().child("Cover"));
+        .child(div().child("Cover").text_size(px(13.)));
         let toggle_transparent = style_pill(
             div().id("toggle-transparent").cursor_pointer().on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
                 this.transparent = !this.transparent;
@@ -199,7 +185,7 @@ impl Gui {
             })),
             self.transparent,
         )
-        .child(div().child("Transparent"));
+        .child(div().child("Transparent").text_size(px(13.)));
         let toggle_opaque = style_pill(
             div().id("toggle-opaque").cursor_pointer().on_click(cx.listener(|this, _: &ClickEvent, _: &mut Window, cx| {
                 this.transparent = !this.transparent;
@@ -207,7 +193,7 @@ impl Gui {
             })),
             !self.transparent,
         )
-        .child(div().child("Opaque"));
+        .child(div().child("Opaque").text_size(px(13.)));
         let generate = style_button(div().id("generate").cursor_pointer().on_click(cx.listener(
             |this, ev: &ClickEvent, window, cx| {
                 this.generate(ev, window);
@@ -215,7 +201,13 @@ impl Gui {
             },
         )))
         .w_full()
-        .child(div().child("Generate AppIcon.ico").text_size(px(15.)));
+        .child(div().child("Generate AppIcon.ico").text_size(px(14.)));
+
+        let status_color = if self.status.starts_with("Error") {
+            colors::ERROR
+        } else {
+            colors::SUCCESS
+        };
 
         card()
             .flex_1()
@@ -258,14 +250,15 @@ impl Gui {
                     .child(toggle_opaque),
             )
             .when(!self.transparent, |this| {
-                this.child(
-                    div()
-                        .flex()
-                        .flex_row()
-                        .flex_wrap()
-                        .gap(spacing::sm())
-                        .children(swatches),
-                )
+                this.child(section_label("Color"))
+                    .child(
+                        div()
+                            .flex()
+                            .flex_row()
+                            .flex_wrap()
+                            .gap(spacing::sm())
+                            .children(swatches),
+                    )
             })
             .child(div().flex_1())
             .child(generate)
@@ -273,7 +266,7 @@ impl Gui {
                 div()
                     .child(self.status.clone())
                     .text_size(px(12.))
-                    .text_color(color(colors::SUCCESS)),
+                    .text_color(color(status_color)),
             )
     }
 
