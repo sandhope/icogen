@@ -15,10 +15,14 @@ mod ui;
 use std::path::PathBuf;
 
 use icogen_core as core;
+use icogen_ui::window_state;
 
 use gpui::{
     App, AppContext, Application, Bounds, px, size, TitlebarOptions, WindowBounds, WindowOptions,
 };
+
+/// Identifier for persisting window placement (see `icogen_ui::window_state`).
+const APP_ID: &str = "icogen-assets-gui";
 
 fn main() {
     // Optional args: `icogen-assets-gui.exe [image] [-o out_dir]`
@@ -43,17 +47,19 @@ fn main() {
     }
 
     Application::new().run(move |cx: &mut App| {
-        let bounds = Bounds::centered(None, size(px(820.), px(640.)), cx);
+        let default_bounds = Bounds::centered(None, size(px(820.), px(640.)), cx);
+        let window_bounds =
+            window_state::load(APP_ID, cx).unwrap_or(WindowBounds::Windowed(default_bounds));
         cx.open_window(
             WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
+                window_bounds: Some(window_bounds),
                 titlebar: Some(TitlebarOptions {
                     title: Some("IcoGen Assets".into()),
                     ..Default::default()
                 }),
                 ..Default::default()
             },
-            |_, cx| {
+            |window, cx| {
                 let mut gui = gui::Gui::new();
                 gui.out_dir = out_arg.clone();
                 if let Some(p) = &input_arg {
@@ -61,7 +67,13 @@ fn main() {
                         gui.set_source(PathBuf::from(p), image);
                     }
                 }
-                cx.new(|_| gui)
+                cx.new(|cx| {
+                    cx.observe_window_bounds(window, move |_, window, _| {
+                        window_state::save(APP_ID, window.window_bounds());
+                    })
+                    .detach();
+                    gui
+                })
             },
         )
         .unwrap();

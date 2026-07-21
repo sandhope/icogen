@@ -67,7 +67,7 @@ window: drag & drop or a native file dialog, per-size / per-target toggles, a
 live preview of every generated frame, and an editable output path. `icogen-gui`
 additionally offers contain/cover mode, background color presets and inner
 padding. Both accept an optional image path and `-o <output>` on the command
-line.
+line, and both remember their window size and position between sessions.
 
 ## What it generates
 
