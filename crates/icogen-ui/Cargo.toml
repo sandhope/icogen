@@ -1,9 +1,9 @@
 [package]
 name = "icogen-ui"
-version = "0.0.1"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Shared GPUI UI components for the icogen family of tools"
-license = "MIT"
 
 [dependencies]
 gpui.workspace = true
