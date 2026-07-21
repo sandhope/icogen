@@ -1,9 +1,15 @@
-# One-click release script for Windows.
+# One-click release script for Windows (cargo-release style).
 # Usage: .\release.ps1
 #
-# Reads the current version from the workspace Cargo.toml, creates an annotated
-# Git tag (e.g. v0.0.1), pushes it to origin, then bumps the patch version in
-# Cargo.toml (0.0.1 -> 0.0.2), updates Cargo.lock, and commits/pushes the bump.
+# Flow (mirrors `cargo-release`):
+#   1. Read the current workspace version from Cargo.toml.
+#      - If it carries a `-dev` pre-release suffix (e.g. 0.0.4-dev) the release
+#        version is that base version (0.0.4).
+#      - Otherwise the patch component is bumped (0.0.2 -> 0.0.3).
+#   2. Write the release version, commit "Release X.Y.Z".
+#   3. Create + push the annotated tag vX.Y.Z (this is what CI builds).
+#   4. Bump to the next development version X.Y.(Z+1)-dev, commit
+#      "Starting next development iteration X.Y.Z-dev", and push.
 #
 # Cargo.toml is read/written as UTF-8 (no BOM) so non-ASCII characters such as
 # the em dash in comments are preserved byte-for-byte.
@@ -14,7 +20,7 @@ $CargoToml = Join-Path $ProjectRoot "Cargo.toml"
 $Utf8NoBom = New-Object System.Text.UTF8Encoding $false
 
 function Get-WorkspaceVersion {
-    $line = Select-String -Path $CargoToml -Pattern '^version\s*=\s*"(\d+\.\d+\.\d+)"' | Select-Object -First 1
+    $line = Select-String -Path $CargoToml -Pattern '^version\s*=\s*"(\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)"' | Select-Object -First 1
     if (-not $line) {
         throw "Could not find workspace version in $CargoToml"
     }
@@ -22,9 +28,17 @@ function Get-WorkspaceVersion {
 }
 
 function Bump-PatchVersion($version) {
-    $parts = $version -split '\.'
+    # Strip any pre-release suffix first, then bump the patch component.
+    $base = ($version -split '-', 2)[0]
+    $parts = $base -split '\.'
     $parts[2] = [int]$parts[2] + 1
     return $parts -join '.'
+}
+
+function Set-WorkspaceVersion($version) {
+    $content = [System.IO.File]::ReadAllText($CargoToml, [System.Text.Encoding]::UTF8)
+    $content = $content -replace '(?m)^version\s*=\s*"\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?"', "version = `"$version`""
+    [System.IO.File]::WriteAllText($CargoToml, $content, $Utf8NoBom)
 }
 
 function Assert-LastExit($msg) {
@@ -44,43 +58,58 @@ Write-Host "Running cargo check..."
 cargo check
 Assert-LastExit "cargo check failed"
 
-# 3. Read current version and create the release tag (skip if it already exists).
+# 3. Determine the release version.
+#    -dev suffix -> drop it; plain version -> bump patch.
 $currentVersion = Get-WorkspaceVersion
-$tag = "v$currentVersion"
+if ($currentVersion -match '-') {
+    $releaseVersion = ($currentVersion -split '-', 2)[0]
+} else {
+    $releaseVersion = Bump-PatchVersion $currentVersion
+}
+$tag = "v$releaseVersion"
 Write-Host "Current version: $currentVersion"
+Write-Host "Release version: $releaseVersion"
 
 $existing = git tag -l $tag
 if ($existing) {
-    Write-Host "Tag $tag already exists; skipping tag creation and push."
-} else {
-    Write-Host "Creating and pushing tag $tag..."
-    git tag -a $tag -m "Release $tag"
-    Assert-LastExit "git tag failed"
-    git push origin $tag
-    Assert-LastExit "git push (tag) failed"
+    throw "Tag $tag already exists. Aborting to avoid re-releasing."
 }
 
-# 4. Bump patch version in Cargo.toml, preserving all other bytes (UTF-8, no BOM).
-$nextVersion = Bump-PatchVersion $currentVersion
-Write-Host "Bumping version to $nextVersion..."
-$content = [System.IO.File]::ReadAllText($CargoToml, [System.Text.Encoding]::UTF8)
-$content = $content -replace '(?m)^version\s*=\s*"\d+\.\d+\.\d+"', "version = `"$nextVersion`""
-[System.IO.File]::WriteAllText($CargoToml, $content, $Utf8NoBom)
-
-# 5. Refresh Cargo.lock to match the new version.
+# 4. Write the release version and commit it.
+Set-WorkspaceVersion $releaseVersion
 Write-Host "Updating Cargo.lock..."
 cargo check
-Assert-LastExit "cargo check failed after bump"
+Assert-LastExit "cargo check failed after setting release version"
 
-# 6. Commit and push the version bump.
 git add $CargoToml
 if (Test-Path (Join-Path $ProjectRoot "Cargo.lock")) {
     git add (Join-Path $ProjectRoot "Cargo.lock")
 }
-git commit -m "Bump version to $nextVersion"
-Assert-LastExit "git commit failed"
+git commit -m "Release $releaseVersion"
+Assert-LastExit "git commit (release) failed"
+
+# 5. Create and push the release tag (this is what CI builds).
+Write-Host "Creating and pushing tag $tag..."
+git tag -a $tag -m "Release $releaseVersion"
+Assert-LastExit "git tag failed"
+git push origin $tag
+Assert-LastExit "git push (tag) failed"
+
+# 6. Bump to the next development version (X.Y.(Z+1)-dev) and commit.
+$nextDev = "$(Bump-PatchVersion $releaseVersion)-dev"
+Write-Host "Starting next development iteration $nextDev..."
+Set-WorkspaceVersion $nextDev
+cargo check
+Assert-LastExit "cargo check failed after dev bump"
+
+git add $CargoToml
+if (Test-Path (Join-Path $ProjectRoot "Cargo.lock")) {
+    git add (Join-Path $ProjectRoot "Cargo.lock")
+}
+git commit -m "Starting next development iteration $nextDev"
+Assert-LastExit "git commit (dev bump) failed"
 git push
 Assert-LastExit "git push failed"
 
 Write-Host ""
-Write-Host "Done. Released $tag and bumped workspace version to $nextVersion."
+Write-Host "Done. Released $tag and bumped workspace version to $nextDev."
