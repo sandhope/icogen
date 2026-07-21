@@ -1,0 +1,17 @@
+[package]
+name = "icogen-assets-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "GUI (GPUI) for generating WinUI 3 / Windows App SDK asset PNGs"
+
+[[bin]]
+name = "icogen-assets-gui"
+path = "src/main.rs"
+
+[dependencies]
+icogen-core = { path = "../icogen-core" }
+icogen-ui = { path = "../icogen-ui" }
+gpui = "0.2.2"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+rfd = "0.15"

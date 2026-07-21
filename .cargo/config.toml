@@ -1,0 +1,7 @@
+# Project-local cargo config.
+# The global cargo home redirects target-dir to a shared location off the
+# project; this overrides it so build artifacts stay inside the repo
+# (under dist/release, which is gitignored) and the one-click build script can
+# find the binaries at a predictable relative path.
+[build]
+target-dir = "dist"

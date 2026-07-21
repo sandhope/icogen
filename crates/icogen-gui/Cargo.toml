@@ -1,0 +1,13 @@
+[package]
+name = "icogen-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Graphical frontend for generating Windows AppIcon.ico (GPUI)"
+
+[dependencies]
+icogen-core = { path = "../icogen-core" }
+icogen-ui = { path = "../icogen-ui" }
+gpui = "0.2.2"
+image = "0.25"
+rfd = "0.15"

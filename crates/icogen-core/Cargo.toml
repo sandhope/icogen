@@ -1,0 +1,16 @@
+[package]
+name = "icogen-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Core logic for generating multi-resolution Windows .ico files"
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = [
+    "png",
+    "jpeg",
+    "bmp",
+    "gif",
+    "webp",
+    "tiff",
+] }

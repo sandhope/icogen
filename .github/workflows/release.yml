@@ -1,0 +1,41 @@
+name: Release
+
+# Publish a GitHub Release with the Windows binaries whenever a `v*` tag is
+# pushed (e.g. `v1.0.0`). Also runs manually from the Actions tab.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Verify tag matches Cargo.toml version
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(\d+\.\d+\.\d+)"' | Select-Object -First 1).Matches.Groups[1].Value
+          $expected = "v$version"
+          $actual = "${{ github.ref_name }}"
+          if ($expected -ne $actual) {
+            Write-Error "Tag $actual does not match Cargo.toml version $expected"
+            exit 1
+          }
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/release/*.exe
+          generate_release_notes: true
