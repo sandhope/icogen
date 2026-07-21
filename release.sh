@@ -38,13 +38,17 @@ fi
 echo "Running cargo check..."
 cargo check
 
-# 3. Read current version and create the release tag.
+# 3. Read current version and create the release tag (skip if it already exists).
 CurrentVersion=$(get_workspace_version)
 Tag="v$CurrentVersion"
 echo "Current version: $CurrentVersion"
-echo "Creating and pushing tag $Tag..."
-git tag -a "$Tag" -m "Release $Tag"
-git push origin "$Tag"
+if git rev-parse "$Tag" >/dev/null 2>&1; then
+    echo "Tag $Tag already exists; skipping tag creation and push."
+else
+    echo "Creating and pushing tag $Tag..."
+    git tag -a "$Tag" -m "Release $Tag"
+    git push origin "$Tag"
+fi
 
 # 4. Bump patch version in Cargo.toml.
 NextVersion=$(bump_patch_version "$CurrentVersion")
@@ -60,7 +64,7 @@ git add "$CargoToml"
 if [ -f "$ProjectRoot/Cargo.lock" ]; then
     git add "$ProjectRoot/Cargo.lock"
 fi
-git commit -m "Bump version to $NextVersion [skip ci]"
+git commit -m "Bump version to $NextVersion"
 git push
 
 echo ""
