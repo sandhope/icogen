@@ -62,6 +62,7 @@ fn main() {
                 window_bounds: Some(window_bounds),
                 titlebar: Some(TitlebarOptions {
                     title: Some("IcoGen Assets".into()),
+                    appears_transparent: true,
                     ..Default::default()
                 }),
                 ..Default::default()

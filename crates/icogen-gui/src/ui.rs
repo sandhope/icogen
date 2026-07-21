@@ -36,7 +36,7 @@ impl Render for Gui {
         let source = self.source_panel(&t, &s, cx);
         let controls = self.controls_panel(&t, &s, cx);
         let result = self.result_panel(&t);
-        let bar = toolbar::toolbar(&t, cx);
+        let bar = toolbar::toolbar("IcoGen", &t, cx);
         div()
             .size_full()
             .flex()
@@ -104,7 +104,8 @@ impl Gui {
                     .items_center()
                     .child(drop_icon(t))
                     .child(drop_hint(s.drop_hint, t))
-            });
+            })
+            .cursor_pointer();
 
         card(t)
             .w(px(340.))

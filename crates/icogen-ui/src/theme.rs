@@ -38,6 +38,9 @@ pub struct ThemeColors {
     pub success: u32,
     pub error: u32,
 
+    // --- Window control (close button) hover ---
+    pub close_hover: u32,
+
     // --- Drop zone icon ---
     pub drop_icon_bg: u32,
     pub drop_icon_fg: u32,
@@ -67,6 +70,8 @@ impl ThemeColors {
             success: 0x059669,
             error: 0x57534e,
 
+            close_hover: 0xe81123,
+
             drop_icon_bg: 0xe2e8f0,
             drop_icon_fg: 0x64748b,
         }
@@ -94,6 +99,8 @@ impl ThemeColors {
 
             success: 0x34d399,
             error: 0xa8a29e,
+
+            close_hover: 0xc42b1c,
 
             drop_icon_bg: 0x334155,
             drop_icon_fg: 0x94a3b8,
