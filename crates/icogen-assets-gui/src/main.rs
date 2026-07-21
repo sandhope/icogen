@@ -48,7 +48,8 @@ fn main() {
         }
     }
 
-    Application::new().run(move |cx: &mut App| {
+    let platform = gpui_platform::current_platform(false);
+    Application::with_platform(platform).run(move |cx: &mut App| {
         // Load persisted preferences, then initialize theme + i18n globals.
         let prefs = settings::load();
         I18nManager::init(cx, &prefs.language_id);

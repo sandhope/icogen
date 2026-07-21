@@ -14,6 +14,16 @@ version = "0.0.1"
 edition = "2024"
 license = "MIT"
 
+[workspace.dependencies]
+# Use gpui straight from the Zed GitHub repo (pinned to the commit our toolbar
+# code is copied from) instead of the stale crates.io 0.2.2 publish. This gives
+# us the current API (WindowControlArea, hover text re-layout, etc.).
+gpui = { git = "https://github.com/zed-industries/zed", rev = "a9f6bfac2fda39766c859a36470a80522728aa22" }
+# Provides `current_platform()` — the new gpui split out the platform backend
+# into its own crate, so `Application::new()` was replaced by
+# `Application::with_platform(current_platform(false))`.
+gpui_platform = { git = "https://github.com/zed-industries/zed", rev = "a9f6bfac2fda39766c859a36470a80522728aa22" }
+
 [profile.release]
 opt-level = "z"
 lto = true

@@ -29,14 +29,14 @@ fn render_img(img: &RgbaImage) -> Arc<RenderImage> {
 }
 
 impl Render for Gui {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = cx.global::<ThemeManager>().colors;
         let s = cx.global::<I18nManager>().strings().clone();
 
         let source = self.source_panel(&t, &s, cx);
         let controls = self.controls_panel(&t, &s, cx);
         let result = self.result_panel(&t);
-        let bar = toolbar::toolbar("IcoGen", &t, cx);
+        let bar = toolbar::toolbar("IcoGen", &t, window, cx);
         div()
             .size_full()
             .flex()

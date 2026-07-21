@@ -8,6 +8,7 @@ description = "Graphical frontend for generating Windows AppIcon.ico (GPUI)"
 [dependencies]
 icogen-core = { path = "../icogen-core" }
 icogen-ui = { path = "../icogen-ui" }
-gpui = "0.2.2"
+gpui.workspace = true
+gpui_platform.workspace = true
 image = "0.25"
 rfd = "0.15"

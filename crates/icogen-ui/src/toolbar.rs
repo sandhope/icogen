@@ -6,7 +6,7 @@
 //! toggles plus the standard window controls (minimize, maximize, close).
 
 use gpui::prelude::*;
-use gpui::{div, px, App, ClickEvent, Context, Div, Stateful, WindowControlArea};
+use gpui::{div, px, App, ClickEvent, Context, Div, Hsla, Rgba, Stateful, Window, WindowControlArea};
 
 use crate::color::color;
 use crate::i18n::I18nManager;
@@ -46,14 +46,101 @@ fn persist(cx: &App) {
     });
 }
 
+/// Window caption buttons, copied from Zed's `WindowsWindowControls` /
+/// `WindowsCaptionButton` (crates/platform_title_bar). Using `WindowControlArea`
+/// lets the OS handle minimize / maximize / restore / close natively — so the
+/// maximize button toggles and the glyph swaps to the "restore" icon when the
+/// window is maximized — while the styling (incl. the white × on red) stays
+/// under our control via hover/active styles.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum WindowControlButton {
+    Minimize,
+    Restore,
+    Maximize,
+    Close,
+}
+
+impl WindowControlButton {
+    fn id(&self) -> &'static str {
+        match self {
+            WindowControlButton::Minimize => "win-min",
+            WindowControlButton::Restore | WindowControlButton::Maximize => "win-max",
+            WindowControlButton::Close => "win-close",
+        }
+    }
+
+    fn icon(&self) -> &'static str {
+        match self {
+            WindowControlButton::Minimize => "\u{e921}",
+            WindowControlButton::Restore => "\u{e923}",
+            WindowControlButton::Maximize => "\u{e922}",
+            WindowControlButton::Close => "\u{e8bb}",
+        }
+    }
+
+    fn control_area(&self) -> WindowControlArea {
+        match self {
+            WindowControlButton::Close => WindowControlArea::Close,
+            WindowControlButton::Minimize => WindowControlArea::Min,
+            WindowControlButton::Restore | WindowControlButton::Maximize => WindowControlArea::Max,
+        }
+    }
+
+    /// Render the button. `t` supplies theme colors; the close button uses the
+    /// Windows red regardless of theme.
+    fn render(self, t: &ThemeColors) -> Stateful<Div> {
+        let (hover_bg, hover_fg, active_bg, active_fg) = match self {
+            WindowControlButton::Close => {
+                // Windows close red (#E81123).
+                let c: Hsla = Rgba {
+                    r: 232.0 / 255.0,
+                    g: 17.0 / 255.0,
+                    b: 35.0 / 255.0,
+                    a: 1.0,
+                }
+                .into();
+                (c, color(0xffffff), c.opacity(0.8), color(0xffffff).opacity(0.8))
+            }
+            _ => (
+                color(t.surface_hover),
+                color(t.text_primary),
+                color(t.surface_hover),
+                color(t.text_primary),
+            ),
+        };
+
+        div()
+            .id(self.id())
+            .flex()
+            .items_center()
+            .justify_center()
+            .content_center()
+            .occlude()
+            .w(px(40.))
+            .h_full()
+            .text_size(px(10.))
+            .font_family(get_font())
+            .hover(|s| s.bg(hover_bg).text_color(hover_fg))
+            .active(|s| s.bg(active_bg).text_color(active_fg))
+            .window_control_area(self.control_area())
+            .child(self.icon())
+    }
+}
+
+/// Segoe Fluent Icons (Windows 11) glyphs for the caption buttons.
+fn get_font() -> &'static str {
+    "Segoe Fluent Icons"
+}
+
 /// The custom titlebar for an IcoGen window.
 ///
 /// * `title` is shown on the left and acts as a draggable region.
 /// * The right side contains theme/language toggles and the standard window
 ///   controls (minimize, maximize, close). The draggable title area uses
-///   `WindowControlArea::Drag`; the controls use normal GPUI click handlers so
-///   their hover styling is fully customizable.
-pub fn toolbar<T: 'static>(title: &str, t: &ThemeColors, cx: &mut Context<T>) -> Div {
+///   `WindowControlArea::Drag`; the controls use `WindowControlArea` so the OS
+///   handles them natively (maximize toggles, close behaves like the real
+///   caption button) while hover/active styling is ours.
+pub fn toolbar<T: 'static>(title: &str, t: &ThemeColors, window: &mut Window, cx: &mut Context<T>) -> Div {
     let is_dark = cx.global::<ThemeManager>().is_dark();
     let is_zh = cx.global::<I18nManager>().language_id == "zh-CN";
 
@@ -79,19 +166,14 @@ pub fn toolbar<T: 'static>(title: &str, t: &ThemeColors, cx: &mut Context<T>) ->
     )
     .child(lang_label);
 
-    let min_btn = window_control_btn(t, t.surface_hover)
-        .id("win-min")
-        .on_click(cx.listener(|_, _, window, _| window.minimize_window()))
-        .child("\u{2212}");
-    let max_btn = window_control_btn(t, t.surface_hover)
-        .id("win-max")
-        .on_click(cx.listener(|_, _, window, _| window.zoom_window()))
-        .child("\u{25A1}");
-    let close_btn = window_control_btn(t, t.close_hover)
-        .id("win-close")
-        .hover(|s| s.text_color(color(0xffffff)))
-        .on_click(cx.listener(|_, _, _, cx| cx.quit()))
-        .child("\u{00D7}");
+    let min_btn = WindowControlButton::Minimize.render(t);
+    let max_btn = (if window.is_maximized() {
+        WindowControlButton::Restore
+    } else {
+        WindowControlButton::Maximize
+    })
+    .render(t);
+    let close_btn = WindowControlButton::Close.render(t);
 
     // Draggable title region. It fills the remaining horizontal space so the
     // user can drag the window from anywhere on the left side.
@@ -160,25 +242,4 @@ fn toolbar_icon_btn(div: Stateful<Div>, t: &ThemeColors) -> Stateful<Div> {
         .cursor_pointer()
 }
 
-/// A window-control button (minimize / maximize / close).
-///
-/// The button fills the full titlebar height and has no rounded corners, so
-/// its hover background spans the bar like native apps. `hover_bg` is the
-/// background applied on hover. The glyph color is handled by each button's
-/// own child (see `close_glyph`) because GPUI shapes text at layout time and
-/// only the glyph's direct container re-lays-out on hover.
-///
-/// We use normal GPUI click handlers instead of `WindowControlArea` so the
-/// hover styling (especially the white × on red) is fully under our control.
-fn window_control_btn(t: &ThemeColors, hover_bg: u32) -> Div {
-    div()
-        .w(px(40.))
-        .h_full()
-        .flex()
-        .items_center()
-        .justify_center()
-        .cursor_pointer()
-        .text_color(color(t.text_secondary))
-        .text_size(px(14.))
-        .hover(|s| s.bg(color(hover_bg)))
-}
+
