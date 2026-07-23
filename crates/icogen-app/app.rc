@@ -1,0 +1,2 @@
+// Window/taskbar icon — GPUI loads resource ID 1 via LoadImageW.
+1 ICON "../../assets/app.ico"
